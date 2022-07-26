@@ -6,36 +6,36 @@
 #if os(iOS)
 
 import CoreCombine
-//import NPCombine
-//import NPKit
-import StaticTable
 import Foundation
-//import UIKit
+import StaticTable
 
-class ArrayDetailController: StaticTableController {
+class ArrayDetailController: DataTableController {
 	public init(subject: CBSubject<Array<Any>>) {
+		super.init(style: .insetGrouped)
+		self.title = subject.name
+
 		let value = subject.value
-		var data = TableData()
-		var section = TableSection("Array (\(value.count))")
+		let section = self.data.createSection(header: .string("Array (\(value.count))"))
 		for item in value {
 			switch item {
-				case is Bool: section.add(row: TableRow("\(item as! Bool)", kind: .text))
-				case is String: section.add(row: TableRow(item as! String, kind: .text))
-				case is Double: section.add(row: TableRow("\(item as! Double)", kind: .text))
+				case is Bool:
+					section.createRow(named: .string("\(item as! Bool)"), kind: .text).enable()
+				case is String:
+					section.createRow(named: .string(item as! String), kind: .text).enable()
+				case is Double:
+					section.createRow(named: .string("\(item as! Double)"), kind: .text).enable()
 				case is Date:
 					let dateFormatter = DateFormatter()
 					dateFormatter.dateStyle = .long
 					dateFormatter.timeStyle = .short
-					section.add(row: TableRow(dateFormatter.string(from: item as! Date), kind: .text))
-				case is Array<Any>: section.add(row: TableRow("Array (\((item as! Array<Any>).count))", kind: .text))
+					section.createRow(named: .string(dateFormatter.string(from: item as! Date)), kind: .text).enable()
+				case is Array<Any>:
+					section.createRow(named: .string("Array (\((item as! Array<Any>).count))"), kind: .text).enable()
 				default:
 					print("Unhandled Item: \(type(of: item))")
 					print(" - \(item)")
 			}
 		}
-		data.add(section: section)
-		super.init(style: .insetGrouped, data: data)
-		self.title = subject.name
 	}
 
 	required init?(coder: NSCoder) {

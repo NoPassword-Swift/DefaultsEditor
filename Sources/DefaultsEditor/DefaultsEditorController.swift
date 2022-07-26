@@ -11,11 +11,7 @@ import NPKit
 import StaticTable
 import UIKit
 
-private enum CellIdentifier {
-	static let Text = "TextCell"
-}
-
-public class DefaultsEditorController: NPTableViewController {
+public class DefaultsEditorController: TableController {
 	private let defaults: [CBUserDefaults]
 	private var activeDefault: CBUserDefaults
 
@@ -60,8 +56,54 @@ public class DefaultsEditorController: NPTableViewController {
 			UIBarButtonItem(image: UIImage(systemName: "tablecells")!, menu: defaultMenu),
 			UIBarButtonItem(image: UIImage(systemName: "line.3.horizontal.decrease.circle")!, menu: filterMenu),
 		]
+	}
 
-		self.tableView.register(TextTableCell.self, forCellReuseIdentifier: CellIdentifier.Text)
+	public override func tableView(_ tableView: TableView, cellForRowAt indexPath: IndexPath) -> TableCell {
+			let key = self.data[indexPath.section]
+			guard let value = self.activeDefault.defaults.value(forKey: key) else {
+				let cell = tableView.dequeueText(for: indexPath)
+				cell.title = "INVALID"
+				return cell
+			}
+
+			switch value {
+				case is Bool:
+					let cell = tableView.dequeueToggle(for: indexPath)
+					cell.title = " "
+					cell.trackToggle(to: self.activeDefault.boolSubject(forKey: key))
+					return cell
+				case is String:
+					let cell = tableView.dequeueText(for: indexPath)
+					cell.bindTitle(to: self.activeDefault.stringSubject(forKey: key))
+					cell.accessoryType = .disclosureIndicator
+					return cell
+				case is Double:
+					let cell = tableView.dequeueText(for: indexPath)
+					cell.bindTitle(to: self.activeDefault.doubleSubject(forKey: key).map { $0.description })
+					cell.accessoryType = .disclosureIndicator
+					return cell
+				case is Date:
+					let cell = tableView.dequeueText(for: indexPath)
+					cell.bindTitle(to: self.activeDefault.dateSubject(forKey: key).map {
+						let dateFormatter = DateFormatter()
+						dateFormatter.dateStyle = .long
+						dateFormatter.timeStyle = .short
+						return dateFormatter.string(from: $0)
+					})
+					cell.accessoryType = .disclosureIndicator
+					return cell
+				case is Array<Any>:
+					let cell = tableView.dequeueText(for: indexPath)
+					cell.bindTitle(to: self.activeDefault.arraySubject(forKey: key).map { "Array (\($0.count))" })
+					cell.accessoryType = .disclosureIndicator
+					return cell
+				default:
+					print("Unhandled: \(type(of: value))")
+					print(" - \(value)")
+					let cell = tableView.dequeueText(for: indexPath)
+					cell.title = nil
+					return cell
+			}
 	}
 
 	// MARK: UITableViewDataSource
@@ -76,67 +118,6 @@ public class DefaultsEditorController: NPTableViewController {
 
 	public override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
 		return self.data[section]
-	}
-
-	public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-		let key = self.data[indexPath.section]
-		guard let value = self.activeDefault.defaults.value(forKey: key) else {
-			let cell = self.tableView.dequeueReusableCell(withIdentifier: CellIdentifier.Text, for: indexPath) as! TextTableCell
-			cell.title = "INVALID"
-			return cell
-		}
-
-		switch value {
-			case is Bool:
-				let cell = self.tableView.dequeueReusableCell(withIdentifier: CellIdentifier.Text, for: indexPath) as! TextTableCell
-				cell.title = " "
-				cell.accessoryView = CBToggle(tracking: self.activeDefault.boolSubject(forKey: key))
-					.with(translatesAutoresizingMaskIntoConstraints: true)
-				return cell
-			case is String:
-				let cell = self.tableView.dequeueReusableCell(withIdentifier: CellIdentifier.Text, for: indexPath) as! TextTableCell
-				self.activeDefault.stringSubject(forKey: key)
-					.receive(on: DispatchQueue.mainIfNeeded)
-					.sink { cell.title = $0 }
-					.store(in: &cell.subscriptions)
-				cell.accessoryType = .disclosureIndicator
-				return cell
-			case is Double:
-				let cell = self.tableView.dequeueReusableCell(withIdentifier: CellIdentifier.Text, for: indexPath) as! TextTableCell
-				self.activeDefault.doubleSubject(forKey: key)
-					.receive(on: DispatchQueue.mainIfNeeded)
-					.sink { cell.title = $0.description }
-					.store(in: &cell.subscriptions)
-				cell.accessoryType = .disclosureIndicator
-				return cell
-			case is Date:
-				let cell = self.tableView.dequeueReusableCell(withIdentifier: CellIdentifier.Text, for: indexPath) as! TextTableCell
-				self.activeDefault.dateSubject(forKey: key)
-					.receive(on: DispatchQueue.mainIfNeeded)
-					.sink { date in
-						let dateFormatter = DateFormatter()
-						dateFormatter.dateStyle = .long
-						dateFormatter.timeStyle = .short
-						cell.title = dateFormatter.string(from: date)
-					}
-					.store(in: &cell.subscriptions)
-				cell.accessoryType = .disclosureIndicator
-				return cell
-			case is Array<Any>:
-				let cell = self.tableView.dequeueReusableCell(withIdentifier: CellIdentifier.Text, for: indexPath) as! TextTableCell
-				self.activeDefault.arraySubject(forKey: key)
-					.receive(on: DispatchQueue.mainIfNeeded)
-					.sink { cell.title = "Array (\($0.count))" }
-					.store(in: &cell.subscriptions)
-				cell.accessoryType = .disclosureIndicator
-				return cell
-			default:
-				print("Unhandled: \(type(of: value))")
-				print(" - \(value)")
-				let cell = self.tableView.dequeueReusableCell(withIdentifier: CellIdentifier.Text, for: indexPath) as! TextTableCell
-				cell.title = nil
-				return cell
-		}
 	}
 
 	public override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {

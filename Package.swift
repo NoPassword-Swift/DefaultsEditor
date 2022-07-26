@@ -14,7 +14,7 @@ let package = Package(
 			targets: ["DefaultsEditor"]),
 	],
 	dependencies: [
-		.package(url: "https://github.com/NoPassword-Swift/StaticTable.git", "0.0.1"..<"0.1.0"),
+		.package(url: "https://github.com/NoPassword-Swift/StaticTable.git", "0.1.0"..<"0.2.0"),
 	],
 	targets: [
 		.target(
