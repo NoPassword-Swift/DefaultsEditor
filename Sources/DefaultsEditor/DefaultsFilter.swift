@@ -28,6 +28,7 @@ public struct DefaultsFilter: Equatable {
 			"NSAllowsDefaultLineBreakStrategy",
 			"NSInterfaceStyle",
 			"NSLanguages",
+			"NSShowNonLocalizedStrings",
 			"PKKeychainVersionKey",
 			"PKLogNotificationServiceResponsesKey",
 			"com.apple.Animoji.StickerRecents.SplashVersion",
